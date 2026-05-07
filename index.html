@@ -231,6 +231,93 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .display-title { font-size: 3rem; }
+            .slide-inner { padding: 50px; }
+            .image-container { height: 400px; }
+            h1[style*="7rem"] { font-size: 5.5rem !important; }
+            h2[style*="7rem"] { font-size: 5.5rem !important; }
+        }
+
+        @media (max-width: 991px) {
+            .slide-inner {
+                padding: 40px 20px;
+                height: 90vh;
+                overflow-y: auto;
+                justify-content: flex-start;
+            }
+            /* Add margin auto to container to vertically center when content is small, 
+               but allow scrolling when content is large */
+            .slide-inner > .container { margin-top: auto; margin-bottom: auto; }
+            
+            .slide { padding: 20px; }
+            .display-title {
+                font-size: 2.5rem;
+                padding-left: 20px;
+                border-left-width: 10px;
+            }
+            h1[style*="7rem"] { font-size: 4rem !important; }
+            h2[style*="7rem"] { font-size: 4rem !important; }
+            .image-container { height: 350px; }
+            .nav-overlay {
+                padding: 10px 20px;
+                bottom: 20px;
+                width: max-content;
+                max-width: 90%;
+            }
+            .btn-premium {
+                padding: 15px 30px;
+                font-size: 1rem;
+            }
+            .info-card { padding: 30px; }
+            .slide-watermark img { height: 35vh; }
+            .d-flex.gap-5 { gap: 1rem !important; flex-wrap: wrap; }
+        }
+
+        @media (max-width: 576px) {
+            .display-title { font-size: 2rem; margin-bottom: 20px; }
+            h1[style*="7rem"] { font-size: 2.5rem !important; letter-spacing: -1px !important; }
+            h2[style*="7rem"] { font-size: 2.5rem !important; }
+            .slide-inner { padding: 30px 15px; border-radius: 25px; }
+            .slide { padding: 10px; }
+            .image-container { height: 250px; border-width: 5px; border-radius: 20px; }
+            .info-card i { font-size: 2.5rem; margin-bottom: 15px; }
+            
+            .nav-overlay { bottom: 10px; gap: 10px; padding: 10px; border-radius: 50px; }
+            .arrow { width: 35px; height: 35px; }
+            .dot { width: 8px; height: 8px; }
+            #dots-wrap { gap: 6px !important; flex-wrap: wrap; justify-content: center; max-width: 180px; }
+            
+            .fs-1 { font-size: 1.5rem !important; }
+            .fs-2 { font-size: 1.3rem !important; }
+            .fs-3 { font-size: 1.2rem !important; }
+            .fs-4 { font-size: 1.1rem !important; }
+            .fs-5 { font-size: 1rem !important; }
+            
+            .feature-tag { padding: 8px 16px; font-size: 0.8rem; margin-bottom: 15px; }
+            
+            /* Adjust paddings for specific elements on mobile */
+            .p-5 { padding: 1.5rem !important; }
+            .rounded-5 { border-radius: 1.5rem !important; }
+            
+            .slide-watermark img { height: 25vh; }
+
+            /* Utility overrides for spacing on mobile */
+            .me-5 { margin-right: 1rem !important; }
+            .mb-5 { margin-bottom: 1.5rem !important; }
+            .mt-5 { margin-top: 1.5rem !important; }
+            .gap-4 { gap: 1rem !important; flex-wrap: wrap; }
+            p[style*="letter-spacing: 5px"] { letter-spacing: 2px !important; }
+        }
+        
+        /* Custom Scrollbar for slide-inner */
+        .slide-inner::-webkit-scrollbar { width: 6px; }
+        .slide-inner::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 10px; margin: 20px; }
+        .slide-inner::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.4); border-radius: 10px; }
+        .slide-inner::-webkit-scrollbar-thumb:hover { background: rgba(16, 185, 129, 0.8); }
+        .slide-dark .slide-inner::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
     </style>
 </head>
 
