@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelo MOSCA - ESPOCH FIE</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #0f172a;
+            --secondary: #10b981;
+            --accent: #fbbf24;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --glass: rgba(255, 255, 255, 0.98);
+            --shadow: 0 30px 70px rgba(0, 0, 0, 0.25);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--primary);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow: hidden;
+            color: var(--text-main);
+        }
+
+        h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; }
+
+        /* Watermark Background */
+        .slide-watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15vw;
+            opacity: 0.1; /* A bit more visible for the specific slides */
+            pointer-events: none;
+            filter: grayscale(100%);
+            width: 100%;
+        }
+        .slide-watermark img { 
+            height: 55vh; 
+            max-height: 500px;
+            object-fit: contain; 
+        }
+
+        .slider-viewport {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .slider-wrapper {
+            display: flex;
+            width: 1400vw;
+            height: 100%;
+            transition: transform 1.2s cubic-bezier(0.77, 0, 0.175, 1);
+        }
+
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            flex-shrink: 0;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide-inner {
+            width: 100%;
+            max-width: 1400px;
+            height: 85vh;
+            background: var(--glass);
+            backdrop-filter: blur(25px);
+            border-radius: 45px;
+            padding: 80px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        .slide-dark .slide-inner {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%);
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .text-deep-navy { color: #0f172a !important; }
+
+        .nav-overlay {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px 40px;
+            border-radius: 100px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: 0.4s;
+        }
+        .dot.active {
+            background: var(--secondary);
+            transform: scale(1.6);
+            box-shadow: 0 0 25px var(--secondary);
+        }
+
+        .arrow {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .arrow:hover { background: var(--secondary); transform: scale(1.1); }
+
+        .progress-top {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 8px;
+            background: linear-gradient(to right, #10b981, #34d399, #fbbf24);
+            z-index: 2000;
+            transition: width 0.7s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .display-title { font-size: 4rem; color: var(--primary); margin-bottom: 30px; border-left: 15px solid var(--secondary); padding-left: 30px; line-height: 1.1; }
+        
+        .image-container {
+            border-radius: 40px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            height: 520px;
+            width: 100%;
+            border: 10px solid white;
+            background: #f8fafc;
+        }
+        .image-container img { width: 100%; height: 100%; object-fit: cover; }
+
+        .info-card {
+            background: white;
+            padding: 40px;
+            border-radius: 35px;
+            box-shadow: 0 20px 45px rgba(0,0,0,0.06);
+            height: 100%;
+            transition: 0.5s;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+        .info-card:hover { transform: translateY(-15px); border-color: var(--secondary); box-shadow: 0 35px 70px rgba(0,0,0,0.12); }
+        .info-card i { font-size: 3.5rem; color: var(--secondary); margin-bottom: 30px; display: block; }
+
+        .animate-item { opacity: 0; transform: translateY(50px); }
+        .slide.active .animate-item {
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 1.2s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .btn-premium {
+            padding: 24px 60px;
+            border-radius: 100px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            transition: 0.4s;
+            background: var(--primary);
+            color: white;
+            border: none;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-premium:hover {
+            background: var(--secondary);
+            transform: scale(1.1) translateY(-10px);
+            color: white;
+        }
+
+        .feature-tag {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--secondary);
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: 800;
+            margin-bottom: 30px;
+            display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="progress-top" id="main-progress"></div>
+
+
+
+    <div class="nav-overlay">
+        <div class="arrow" onclick="changeSlide(-1)"><i class="fas fa-chevron-left"></i></div>
+        <div id="dots-wrap" class="d-flex gap-2 mx-3"></div>
+        <div class="arrow" onclick="changeSlide(1)"><i class="fas fa-chevron-right"></i></div>
+    </div>
+
+    <div class="slider-viewport">
+        <div class="slider-wrapper" id="main-slider">
+
+            <!-- 1. PORTADA -->
+            <div class="slide slide-dark" style="background-image: linear-gradient(rgba(15,23,42,0.85), rgba(15,23,42,0.85)), url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=2000');">
+                <div class="slide-watermark">
+                    <img src="assets/espoch_logo.png" alt="ESPOCH">
+                    <img src="assets/fie_logo.png" alt="FIE">
+                </div>
+                <div class="slide-inner">
+                    <div class="container text-center">
+                        <div class="animate-item">
+                            <span class="feature-tag">Software Quality Assurance</span>
+                            <h1 style="font-size: 7rem; margin-bottom: 1rem; letter-spacing: -2px;">Modelo MOSCA</h1>
+                            <p class="fs-1 text-success fw-bold mb-5" style="letter-spacing: 5px;">CALIDAD SISTÉMICA</p>
+                        </div>
+                        
+                        <div class="row justify-content-center animate-item" style="transition-delay: 0.3s;">
+                            <div class="col-md-10">
+                                <div class="p-5 rounded-5" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(15px);">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-4 mb-md-0">
+                                            <p class="text-uppercase small fw-bold text-success mb-3" style="letter-spacing: 2px;">Integrantes Grupo 15</p>
+                                            <h3 class="mb-1 fw-bold">Nuria Vélez Bravo</h3>
+                                            <h3 class="fw-bold">Sebastián Yambay C.</h3>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="text-uppercase small fw-bold text-success mb-3" style="letter-spacing: 2px;">Docente Guía</p>
+                                            <h3 class="mb-1 fw-bold">Ing. Patricia Cordovez Mgs.</h3>
+                                        </div>
+                                    </div>
+                                    <hr class="my-5 opacity-25">
+                                    <h5 class="mb-0 opacity-75 fw-light">FACULTAD DE INFORMÁTICA Y ELECTRÓNICA | CARRERA DE SOFTWARE | ESPOCH 2026</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. INSTRUCCIONES -->
+            <div class="slide">
+                <div class="slide-inner">
+                    <div class="container">
+                        <div class="row align-items-center g-5">
+                            <div class="col-lg-6 animate-item">
+                                <span class="feature-tag">Fase 1: Preparación</span>
+                                <h2 class="display-title">Instrucciones de Análisis</h2>
+                                <p class="fs-4 text-muted mb-4">Este material es la base fundamental para su éxito en la evaluación interactiva.</p>
+                                <div class="p-5 rounded-5 bg-white shadow-lg border-start border-5 border-success">
+                                    <p class="fs-4 mb-0 text-dark"><strong>Recomendación:</strong> Preste especial atención a las métricas cuantitativas y los niveles de jerarquía del modelo.</p>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 animate-item" style="transition-delay: 0.2s;">
+                                <div class="image-container">
+                                    <img src="assets/analysis.png" alt="Análisis">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. ¿QUÉ ES MOSCA? -->
+            <div class="slide">
+                <div class="slide-inner">
+                    <div class="container">
+                        <div class="row align-items-center g-5">
+                            <div class="col-lg-6 animate-item">
+                                <div class="image-container">
+                                    <img src="assets/systemic.png" alt="Enfoque">
+                                </div>
+                            </div>
+                            <div class="col-lg-6 animate-item" style="transition-delay: 0.2s;">
+                                <h2 class="display-title">Concepto de Metodología</h2>
+                                <p class="fs-3 mb-5">El Modelo Sistémico de Calidad (MOSCA) es una <strong>Metodología</strong> sistémica (9 letras).</p>
+                                <div class="p-5 rounded-5 border-0 shadow-lg mb-5" style="background: #ecfdf5; border: 1px solid rgba(16,185,129,0.1) !important;">
+                                    <h4 class="text-success fw-bold mb-3"><i class="fas fa-microchip me-3"></i> Enfoque Sistémico</h4>
+                                    <p class="fs-5 mb-0 text-dark">Propone evaluar la calidad analizando la interacción dinámica entre todos los componentes del software como un sistema íntegro.</p>
+                                </div>
+                                <div class="d-flex align-items-center gap-4">
+                                    <div class="h2 bg-primary text-white px-5 py-3 rounded-5 mb-0 shadow-lg">M.O.S.C.A.</div>
+                                    <p class="text-muted small mb-0 fw-bold">Mantenibilidad, Operabilidad, Seguridad, Confiabilidad, Adaptabilidad.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. NIVEL 0: DIMENSIONES -->
+            <div class="slide">
+                <div class="slide-inner">
+                    <div class="container">
+                        <div class="text-center mb-5 animate-item">
+                            <span class="feature-tag">Arquitectura Técnica</span>
+                            <h2 class="display-title d-inline-block">Nivel 0: Dimensiones</h2>
+                            <p class="fs-4 text-muted">Submodelos de evaluación integral (11 letras).</p>
+                        </div>
+                        <div class="row g-5 animate-item" style="transition-delay: 0.2s;">
+                            <div class="col-md-4">
+                                <div class="info-card">
+                                    <i class="fas fa-box-open"></i>
+                                    <h4 class="fw-bold">Producto</h4>
+                                    <p class="text-muted fs-5">Enfoque en el software terminado y funcional (8 letras).</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-card">
+                                    <i class="fas fa-project-diagram"></i>
+                                    <h4 class="fw-bold">Proceso</h4>
+                                    <p class="text-muted fs-5">Focalizado en las metodologías de construcción (7 letras).</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-card">
+                                    <i class="fas fa-users-cog"></i>
+                                    <h4 class="fw-bold">Humana</h4>
+                                    <p class="text-muted fs-5">Mide la competencia y el rol del factor humano en la calidad.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. NIVEL 1: CATEGORÍAS -->
+            <div class="slide">
+                <div class="slide-inner">
+                    <div class="container">
+                        <div class="row align-items-center g-5">
+                            <div class="col-lg-6 animate-item">
+                                <h2 class="display-title">Nivel 1: Categorías</h2>
+                                <p class="fs-3 mb-5">El modelo se desglosa en <strong>11 Categorías</strong> críticas de control (10 letras):</p>
+                                <div class="row g-4">
+                                    <div class="col-12">
+                                        <div class="p-5 rounded-5 bg-white shadow-lg d-flex align-items-center border-start border-5 border-success">
+                                            <div class="h1 text-success mb-0 me-5 fw-bold">06</div>
+                                            <p class="mb-0 fs-5"><strong>De Producto:</strong> Funcionalidad, Fiabilidad, Usabilidad, Eficiencia, Mantenibilidad, Portabilidad.</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="p-5 rounded-5 bg-white shadow-lg d-flex align-items-center border-start border-5 border-primary">
+                                            <div class="h1 text-primary mb-0 me-5 fw-bold">05</div>
+                                            <p class="mb-0 fs-5"><strong>De Proceso:</strong> Ingeniería, Gestión, Soporte, Cliente-Proveedor, Organizacional.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 animate-item" style="transition-delay: 0.2s;">
+                                <div class="image-container">
+                                    <img src="assets/audit.png" alt="Categorías">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. PRODUCTO: SEGURIDAD -->
+            <div class="slide">
+                <div class="slide-inner">
+                    <div class="container">
+                        <div class="text-center mb-5 animate-item">
+                            <h2 class="display-title d-inline-block">Producto: Garantía y Valor</h2>
+                        </div>
+                        <div class="row g-5 animate-item">
+                            <div class="col-md-4">
+                                <div class="info-card border-bottom border-5 border-info">
+                                    <i class="fas fa-clipboard-check"></i>
+                                    <h4 class="fw-bold">Funcionalidad</h4>
+                                    <p class="text-muted">Capacidad para satisfacer necesidades técnicas explícitas.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-card border-bottom border-5 border-danger">
+                                    <i class="fas fa-lock"></i>
+                                    <h4 class="fw-bold">Seguridad</h4>
+                                    <p class="text-muted">Nivel de protección ante vulnerabilidades (9 letras).</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-card border-bottom border-5 border-warning">
+                                    <i class="fas fa-shield-virus"></i>
+                                    <h4 class="fw-bold">Fiabilidad</h4>
+                                    <p class="text-muted">Robustez del sistema ante fallos inesperados.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. PRODUCTO: USABILIDAD -->
+            <div class="slide">
+                <div class="slide-inner">
+                    <div class="container">
+                        <div class="row align-items-center g-5">
+                            <div class="col-lg-6 animate-item">
+                                <div class="image-container">
+                                    <img src="assets/usability.png" alt="UX">
+                                </div>
+                            </div>
+                            <div class="col-lg-6 animate-item" style="transition-delay: 0.2s;">
+                                <h2 class="display-title">Experiencia de Usuario</h2>
+                                <div class="mb-5">
+                                    <h4 class="text-success fw-bold">Usabilidad (10 letras)</h4>
+                                    <p class="fs-4 text-muted">Facilidad de aprendizaje y manejo para el usuario final.</p>
+                                </div>
+                                <div class="p-5 rounded-5 shadow-lg" style="background: #fdf2f8; border-left: 10px solid #db2777;">
+                                    <h4 class="text-pink fw-bold" style="color: #db2777;">Mantenibilidad (14 letras)</h4>
+                                    <p class="fs-4 mb-0 text-dark">Esfuerzo necesario para implementar cambios y mejoras continuas.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. PRODUCTO: ADAPTABILIDAD -->
+            <div class="slide">
+                <div class="slide-inner">
+                    <div class="container">
+                        <div class="row align-items-center g-5">
+                            <div class="col-lg-6 animate-item">
+                                <h2 class="display-title">Resiliencia de Entorno</h2>
+                                <div class="mb-5">
+                                    <h4 class="fw-bold">Adaptabilidad (13 letras)</h4>
+                                    <p class="fs-4 text-muted">Capacidad del sistema para evolucionar ante nuevos requisitos.</p>
+                                </div>
+                                <div class="p-5 bg-white rounded-5 shadow-lg">
+                                    <h4 class="fw-bold">Portabilidad</h4>
+                                    <p class="fs-4 mb-0 text-muted">Facilidad para migrar el software entre plataformas distintas.</p>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 animate-item" style="transition-delay: 0.2s;">
+                                <div class="image-container">
+                                    <img src="assets/flexibility.png" alt="Adaptación">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 9. PROCESO: INGENIERÍA -->
+            <div class="slide">
+                <div class="slide-inner">
+                    <div class="container">
+                        <div class="row align-items-center g-5">
+                            <div class="col-lg-6 animate-item">
+                                <div class="image-container">
+                                    <img src="assets/engineering.png" alt="Ingeniería">
+                                </div>
+                            </div>
+                            <div class="col-lg-6 animate-item" style="transition-delay: 0.2s;">
+                                <h2 class="display-title">Fase de Ingeniería</h2>
+                                <p class="fs-3 mb-5">Categoría que <strong>especifica e implementa</strong> directamente la solución (10 letras).</p>
+                                <div class="bg-white p-5 rounded-5 shadow-lg border-start border-5 border-primary">
+                                    <ul class="fs-4 mb-0">
+                                        <li class="mb-3">Especificación técnica formal.</li>
+                                        <li class="mb-3">Desarrollo y codificación de módulos.</li>
+                                        <li>Mantenimiento correctivo y preventivo.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 10. GESTIÓN Y SOPORTE -->
+            <div class="slide">
+                <div class="slide-inner">
+                    <div class="container">
+                        <div class="text-center mb-5 animate-item">
+                            <h2 class="display-title d-inline-block">Control Operativo</h2>
+                        </div>
+                        <div class="row g-5 animate-item">
+                            <div class="col-md-4">
+                                <div class="info-card">
+                                    <i class="fas fa-user-clock"></i>
+                                    <h4 class="fw-bold">Gestión</h4>
+                                    <p class="text-muted fs-5">Control total sobre cronogramas y recursos del proyecto (7 letras).</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-card">
+                                    <i class="fas fa-tools"></i>
+                                    <h4 class="fw-bold">Soporte</h4>
+                                    <p class="text-muted fs-5">Actividades paralelas de verificación y aseguramiento.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-card">
+                                    <i class="fas fa-handshake"></i>
+                                    <h4 class="fw-bold">Relaciones</h4>
+                                    <p class="text-muted fs-5">Gestión estratégica entre Cliente y Proveedor de software.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 11. NIVEL 3: MÉTRICAS -->
+            <div class="slide">
+                <div class="slide-inner">
+                    <div class="container">
+                        <div class="row align-items-center g-5">
+                            <div class="col-lg-7 animate-item">
+                                <h2 class="display-title">Cuantificación de Calidad</h2>
+                                <p class="fs-3 mb-5">Las <strong>Métricas</strong> (8 letras) permiten la medición objetiva del rendimiento.</p>
+                                <div class="row g-4">
+                                    <div class="col-6"><div class="p-5 bg-white rounded-5 shadow-lg text-center h4 fw-bold">Nominal</div></div>
+                                    <div class="col-6"><div class="p-5 bg-white rounded-5 shadow-lg text-center h4 fw-bold">Ordinal</div></div>
+                                    <div class="col-6"><div class="p-5 bg-white rounded-5 shadow-lg text-center h4 fw-bold">Intervalo</div></div>
+                                    <div class="col-6"><div class="p-5 bg-white rounded-5 shadow-lg text-center h4 fw-bold">De Razón</div></div>
+                                </div>
+                            </div>
+                            <div class="col-lg-5 animate-item" style="transition-delay: 0.2s;">
+                                <div class="image-container">
+                                    <img src="assets/metrics.png" alt="Métricas">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 12. GLOSARIO -->
+            <div class="slide">
+                <div class="slide-inner">
+                    <div class="container text-center">
+                        <h2 class="display-title d-inline-block mb-5">Glosario de Términos</h2>
+                        <div class="row justify-content-center g-5 animate-item">
+                            <div class="col-md-5">
+                                <div class="p-5 bg-white rounded-5 shadow-lg text-start mb-4">
+                                    <h4 class="text-success fw-bold"><i class="fas fa-check-double me-3"></i> MOSCA</h4>
+                                    <p class="fs-5 text-muted mb-0">Modelo Sistémico para la Calidad del Producto.</p>
+                                </div>
+                                <div class="p-5 bg-white rounded-5 shadow-lg text-start">
+                                    <h4 class="text-success fw-bold"><i class="fas fa-check-double me-3"></i> Dimensiones</h4>
+                                    <p class="fs-5 text-muted mb-0">Submodelos estructurales de alto nivel.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="p-5 bg-white rounded-5 shadow-lg text-start mb-4">
+                                    <h4 class="text-success fw-bold"><i class="fas fa-check-double me-3"></i> Ingeniería</h4>
+                                    <p class="fs-5 text-muted mb-0">Proceso de especificación y construcción técnica.</p>
+                                </div>
+                                <div class="p-5 bg-white rounded-5 shadow-lg text-start">
+                                    <h4 class="text-success fw-bold"><i class="fas fa-check-double me-3"></i> Métricas</h4>
+                                    <p class="fs-5 text-muted mb-0">Indicadores cuantitativos de cumplimiento.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 13. EVALUACIÓN -->
+            <div class="slide">
+                <div class="slide-inner text-center">
+                    <div class="container">
+                        <div class="animate-item">
+                            <h2 class="display-title d-inline-block mb-5">Reto Interactivo</h2>
+                            <p class="fs-2 mb-5 fw-light">Demuestre su dominio del <strong>Modelo MOSCA</strong> en tiempo real.</p>
+                            <div class="d-flex justify-content-center gap-5 mt-4">
+                                <a href="https://app.lumi.education/run/9ApLzw" target="_blank" class="btn-premium">
+                                    <i class="fas fa-bolt me-3"></i> Flashcards
+                                </a>
+                                <a href="https://app.lumi.education/run/NwJuxY" target="_blank" class="btn-premium" style="background: var(--secondary);">
+                                    <i class="fas fa-brain me-3"></i> Crucigrama
+                                </a>
+                            </div>
+                            <div class="mt-5 pt-5 opacity-50">
+                                <h5>Evaluación Certificada | ESPOCH FIE 2026</h5>
+                                <p class="mb-0 fs-5 mt-3 fw-bold">Elaborado por: Sebastián Yambay y Nuria Vélez</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 14. CIERRE -->
+            <div class="slide slide-dark" style="background-image: linear-gradient(rgba(15,23,42,0.92), rgba(15,23,42,0.92)), url('assets/thank_you.png');">
+                <div class="slide-watermark">
+                    <img src="assets/espoch_logo.png" alt="ESPOCH">
+                    <img src="assets/fie_logo.png" alt="FIE">
+                </div>
+                <div class="slide-inner">
+                    <div class="container animate-item">
+                        <h2 style="font-size: 7rem; margin-bottom: 0.5rem;" class="text-warning fw-bold">Muchas Gracias</h2>
+                        <div class="mx-auto my-5" style="width: 250px; height: 12px; background: var(--secondary); border-radius: 6px; box-shadow: 0 0 30px var(--secondary);"></div>
+                        
+                        <div class="row justify-content-center mt-5">
+                            <div class="col-md-10">
+                                <div class="bg-white p-5 rounded-5 shadow-lg border-0">
+                                    <div class="row text-center">
+                                        <div class="col-md-6 mb-5 mb-md-0 border-end border-light">
+                                            <p class="text-uppercase small fw-bold text-success mb-4" style="letter-spacing: 3px;">Autores</p>
+                                            <h2 class="text-deep-navy mb-1 fw-bold">Nuria Vélez Bravo</h2>
+                                            <h2 class="text-deep-navy fw-bold">Sebastián Yambay Ch.</h2>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="text-uppercase small fw-bold text-success mb-4" style="letter-spacing: 3px;">Cátedra</p>
+                                            <h2 class="text-deep-navy fw-bold">Ing. Patricia Cordovez Mgs.</h2>
+                                        </div>
+                                    </div>
+                                    <hr class="my-5 opacity-10">
+                                    <h4 class="mb-0 text-deep-navy fw-bold" style="letter-spacing: 2px;">ESCUELA SUPERIOR POLITÉCNICA DE CHIMBORAZO</h4>
+                                    <p class="text-muted mt-2 mb-0 fw-bold">FACULTAD DE INFORMÁTICA Y ELECTRÓNICA | CARRERA DE SOFTWARE</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const totalSlides = 14;
+        const slider = document.getElementById('main-slider');
+        const dotsWrap = document.getElementById('dots-wrap');
+
+        for (let i = 0; i < totalSlides; i++) {
+            const d = document.createElement('div');
+            d.classList.add('dot');
+            d.title = `Slide ${i + 1}`;
+            if (i === 0) d.classList.add('active');
+            d.onclick = () => goToSlide(i);
+            dotsWrap.appendChild(d);
+        }
+
+        function updateSlider() {
+            slider.style.transform = `translateX(-${currentSlide * 100}vw)`;
+            document.querySelectorAll('.slide').forEach((s, i) => {
+                s.classList.toggle('active', i === currentSlide);
+            });
+            document.querySelectorAll('.dot').forEach((d, i) => {
+                d.classList.toggle('active', i === currentSlide);
+            });
+            document.getElementById('main-progress').style.width = `${((currentSlide + 1) / totalSlides) * 100}%`;
+        }
+
+        function changeSlide(dir) {
+            const nextSlide = currentSlide + dir;
+            if (nextSlide >= 0 && nextSlide < totalSlides) {
+                currentSlide = nextSlide;
+                updateSlider();
+            }
+        }
+
+        function goToSlide(idx) {
+            currentSlide = idx;
+            updateSlider();
+        }
+
+        let isMoving = false;
+        window.addEventListener('wheel', (e) => {
+            if (isMoving) return;
+            isMoving = true;
+            if (e.deltaY > 0 || e.deltaX > 0) changeSlide(1);
+            else changeSlide(-1);
+            setTimeout(() => isMoving = false, 600);
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') changeSlide(1);
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+        });
+
+        updateSlider();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
